@@ -50,71 +50,6 @@ export default function UIController() {
   const primaryModels = modelChoicesChat.filter(
     (model) => !model.match(/-\d{4}$/)
   );
-  const menuStructure = [
-    {
-      label: "Chat",
-      items: primaryModels.map((model) => ({
-        text: getModelInfo(model).displayName,
-        checked: settingsForm.model === model,
-        onClick: () =>
-          updateSettingsForm({
-            ...settingsForm,
-            model,
-          }),
-      })),
-    },
-    {
-      label: "Speech to Text",
-      items: [
-        {
-          text: "Azure",
-          checked: modelChoiceSTT === "azure",
-          onClick: () => update({ modelChoiceSTT: "azure" }),
-        },
-        {
-          text: "Whisper",
-          checked: modelChoiceSTT === "whisper",
-          onClick: () => update({ modelChoiceSTT: "whisper" }),
-        },
-      ],
-    },
-    {
-      label: "Text to Speech",
-      items: [
-        {
-          text: "Azure",
-          checked: modelChoiceTTS === "azure",
-          onClick: () => update({ modelChoiceTTS: "azure" }),
-        },
-        {
-          text: "ElevenLabs",
-          checked: modelChoiceTTS === "11labs",
-          onClick: () => update({ modelChoiceTTS: "11labs" }),
-        },
-        {
-          text: "OpenAI",
-          checked: modelChoiceTTS === "openai",
-          onClick: () => update({ modelChoiceTTS: "openai" }),
-        },
-      ],
-    },
-    {
-      label: "Speech to Text Settings",
-      items: [
-        {
-          text: "Show input next to mic",
-          checked: showTextDuringPTT,
-          onClick: () => update({ showTextDuringPTT: !showTextDuringPTT }),
-        },
-        {
-          text: "Auto send text",
-          checked: autoSendStreamingSTT,
-          onClick: () =>
-            update({ autoSendStreamingSTT: !autoSendStreamingSTT }),
-        },
-      ],
-    },
-  ];
 
   return (
     <Menu withArrow closeOnItemClick={false}>
@@ -124,18 +59,9 @@ export default function UIController() {
           compact
           variant="light"
         >
-          <IconDotsVertical size={px("1.1rem")} stroke={1.5} />
         </Button>
       </Menu.Target>
       <Menu.Dropdown>
-        {menuStructure.map((section) => (
-          <React.Fragment key={section.label}>
-            <Menu.Label>{section.label}</Menu.Label>
-            {section.items.map((item) => (
-              <MenuItem key={item.text} item={item} />
-            ))}
-          </React.Fragment>
-        ))}
       </Menu.Dropdown>
     </Menu>
   );

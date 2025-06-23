@@ -96,13 +96,9 @@ export default function MuHeader({ children }: any) {
 
   const activeChat = chats.find((chat) => chat.id === activeChatId);
 
-  const activeModel = useChatStore((state) => state.settingsForm.model);
-
   const navOpened = useChatStore((state) => state.navOpened);
 
   const isSmall = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
-  const isKnownModel = modelInfos[activeModel] !== undefined;
-  const modelInfo = getModelInfo(activeModel);
 
   return (
     <Header height={36} mb={120} sx={{ zIndex: 1002 }}>
@@ -130,15 +126,7 @@ export default function MuHeader({ children }: any) {
                 </MediaQuery>
               </>
             ) : null}
-            <Text size="sm">{modelInfo.displayName}</Text>
-            {isKnownModel && (
-              <>
-                <Divider size="xs" orientation="vertical" />
-                <Text size="sm">
-                  ${(activeChat?.costIncurred || 0).toFixed(2)}
-                </Text>
-              </>
-            )}
+            <Text size="sm">AQUEA</Text>
           </Group>
         </MediaQuery>
 
@@ -158,16 +146,6 @@ export default function MuHeader({ children }: any) {
                 stroke={1.5}
                 color={theme.colors.gray[6]}
               />
-            </ActionIcon>
-          </MediaQuery>
-          <MediaQuery smallerThan="sm" styles={{ display: "none", width: 0 }}>
-            <ActionIcon
-              sx={{ opacity: 0.8 }}
-              onClick={() => {
-                window.open("https://github.com/yakGPT/yakGPT", "_blank");
-              }}
-            >
-              <IconBrandGithub size={px("1.5rem")} />
             </ActionIcon>
           </MediaQuery>
         </Group>

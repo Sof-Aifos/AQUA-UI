@@ -12,10 +12,12 @@ import "highlight.js/styles/stackoverflow-dark.css";
 import { useChatStore } from "@/stores/ChatStore";
 
 import Nav from "@/components/Nav";
+
 import { useEffect, useState } from "react";
 import UIController from "@/components/UIController";
 import { setColorScheme } from "@/stores/ChatActions";
 import AudioPlayer from "@/components/AudioPlayer";
+import { SessionProvider, useSession } from "next-auth/react";
 
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;
@@ -28,7 +30,6 @@ export default function App(props: AppProps) {
     setColorScheme(nextColorScheme);
   };
 
-  const apiKey = useChatStore((state) => state.apiKey);
   const playerMode = useChatStore((state) => state.playerMode);
 
   const [isHydrated, setIsHydrated] = useState(false);
@@ -42,13 +43,20 @@ export default function App(props: AppProps) {
     return <div>Loading...</div>;
   }
 
+  function UIControllerWithSession() {
+    const { data: session, status } = useSession();
+    if (status === "loading") return null;
+    if (!session) return null;
+    return <UIController />;
+  }
+
   return (
-    <>
+    <SessionProvider session={pageProps.session}>
       <Head>
-        <title>YakGPT</title>
-        <meta name="description" content="A new ChatGPT UI" />
+        <title>AQUEA</title>
+        <meta name="description" content="Aquea Chat Web UI" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/venice.png" />
       </Head>
       <ColorSchemeProvider
         colorScheme={colorScheme}
@@ -109,13 +117,13 @@ export default function App(props: AppProps) {
           >
             <div style={{ position: "relative", height: "100%" }}>
               <Component {...pageProps} />
-
-              {apiKey && <UIController />}
+              <UIControllerWithSession />
             </div>
             {playerMode && <AudioPlayer />}
           </AppShell>
         </MantineProvider>
       </ColorSchemeProvider>
-    </>
+    </SessionProvider>
   );
 }
+

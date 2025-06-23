@@ -18,11 +18,13 @@
     "@mantine/next": "^6.0.21",
     "@mantine/notifications": "^6.0.21",
     "@nem035/gpt-3-encoder": "^1.1.7",
+    "@prisma/client": "^6.10.1",
     "@tabler/icons-react": "^2.42.0",
     "@types/node": "18.15.3",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
     "axios": "^1.3.4",
+    "bcrypt": "^6.0.0",
     "embla-carousel-react": "^7.1.0",
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
@@ -33,12 +35,12 @@
     "markdown-to-jsx": "^7.3.2",
     "microsoft-cognitiveservices-speech-sdk": "^1.26.0",
     "next": "13.2.4",
+    "next-auth": "^4.24.11",
     "react": "18.2.0",
     "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "18.2.0",
     "react-syntax-highlighter": "^15.5.0",
     "sharp": "^0.32.0",
-    "typescript": "4.9.5",
     "uuid": "^9.0.0",
     "zustand": "^4.3.6"
   },
@@ -48,6 +50,8 @@
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-syntax-highlighter": "^15.5.10",
     "@types/recordrtc": "^5.6.10",
-    "@types/uuid": "^9.0.1"
+    "@types/uuid": "^9.0.1",
+    "prisma": "^6.10.1",
+    "typescript": "^5.8.3"
   }
 }

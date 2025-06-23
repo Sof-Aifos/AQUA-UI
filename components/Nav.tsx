@@ -27,8 +27,10 @@ import {
   IconSettings,
   IconSun,
   IconTrash,
+  IconLogout,
 } from "@tabler/icons-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { signOut, useSession } from "next-auth/react";
 import ClearChatsButton from "./ClearChatsButton";
 import KeyModal from "./KeyModal";
 import SettingsModal from "./SettingsModal";
@@ -131,6 +133,7 @@ const useStyles = createStyles((theme) => ({
 
 export default function NavbarSimple() {
   const { classes, cx, theme } = useStyles();
+  const { data: session } = useSession();
 
   const router = useRouter();
   const activeChatId = router.query.chatId as string | undefined;
@@ -252,6 +255,9 @@ export default function NavbarSimple() {
   };
   const editTitleInputRef = useRef<HTMLInputElement>(null);
 
+  // Use next-auth session for login state
+  const loggedIn = !!session;
+
   return (
     <Navbar
       height={"100%"}
@@ -311,6 +317,21 @@ export default function NavbarSimple() {
           />
         )}
 
+        {/* Logout button before theme toggle */}
+        {loggedIn && (
+          <a
+            href="#"
+            className={classes.link}
+            onClick={e => {
+              e.preventDefault();
+              signOut();
+            }}
+          >
+            <IconLogout className={classes.linkIcon} stroke={1.5} />
+            <span>Logout</span>
+          </a>
+        )}
+
         <a
           href="#"
           className={classes.link}
@@ -320,24 +341,6 @@ export default function NavbarSimple() {
           <span>
             {upperFirst(colorScheme === "light" ? "dark" : "light")} theme
           </span>
-        </a>
-
-        <Modal opened={openedKeyModal} onClose={closeKeyModal} title="API Keys">
-          <KeyModal close={closeKeyModal} />
-        </Modal>
-
-        <a
-          href="#"
-          className={classes.link}
-          onClick={(event) => {
-            event.preventDefault();
-            openedSettingsModal && closeSettingsModal();
-            openKeyModal();
-            if (isSmall) setNavOpened(false);
-          }}
-        >
-          <IconKey className={classes.linkIcon} stroke={1.5} />
-          <span>API Keys</span>
         </a>
 
         <Modal
@@ -353,11 +356,13 @@ export default function NavbarSimple() {
           className={classes.link}
           onClick={(event) => {
             event.preventDefault();
+            if (!loggedIn) return;
             openedKeyModal && closeKeyModal();
             openSettingsModal();
-
             if (isSmall) setNavOpened(false);
           }}
+          style={!loggedIn ? { pointerEvents: "none", opacity: 0.5 } : {}}
+          aria-disabled={!loggedIn}
         >
           <IconSettings className={classes.linkIcon} stroke={1.5} />
           <span>Settings</span>
