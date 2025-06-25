@@ -12,8 +12,43 @@ import {
 import ChatTextInput from "./ChatTextInput";
 import { useRouter } from "next/router";
 import UIControllerSettings from "./UIControllerSettings";
-import * as OpusRecorder from "@/stores/RecorderActions";
-import * as AzureRecorder from "@/stores/AzureRecorderActions";
+import { useRef, useState } from "react";
+
+// Custom hook for audio recording
+function useAudioRecorder({ onSave }: { onSave: (audioBlob: Blob, messageId: string) => void }) {
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const [audioState, setAudioState] = useState<'idle' | 'recording' | 'transcribing'>('idle');
+  const [messageId, setMessageId] = useState<string | null>(null);
+
+  const startRecording = async () => {
+    setAudioState('recording');
+    const newMessageId = crypto.randomUUID();
+    setMessageId(newMessageId);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    chunksRef.current = [];
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'audio/mp3' });
+      setAudioState('transcribing');
+      if (messageId) onSave(blob, messageId);
+      setTimeout(() => setAudioState('idle'), 1000); // Reset after upload
+    };
+    mediaRecorder.start();
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  return { audioState, startRecording, stopRecording };
+}
 import {
   addChat,
   setPlayerMode,
@@ -103,22 +138,25 @@ const PlayerControls = () => {
 
 const ChatInput = () => {
   const { classes } = styles();
-
   const router = useRouter();
-
   const editingMessage = useChatStore((state) => state.editingMessage);
-
   const pushToTalkMode = useChatStore((state) => state.pushToTalkMode);
-  const audioState = useChatStore((state) => state.audioState);
-
   const activeChatId = useChatStore((state) => state.activeChatId);
   const showTextDuringPTT = useChatStore((state) => state.showTextDuringPTT);
   const showTextInput = !pushToTalkMode || showTextDuringPTT || editingMessage;
 
-  const modelChoiceSTT = useChatStore((state) => state.modelChoiceSTT);
-  const Recorder = modelChoiceSTT === "azure" ? AzureRecorder : OpusRecorder;
+  // Save audio to server
+  const handleSaveAudio = async (audioBlob: Blob, messageId: string) => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, `${messageId}.mp3`);
+    await fetch("/api/upload-audio", {
+      method: "POST",
+      body: formData,
+    });
+  };
 
-  console.log("rendered with audioState", audioState);
+  const { audioState, startRecording, stopRecording } = useAudioRecorder({ onSave: handleSaveAudio });
+
   return (
     <div className={classes.textAreaContainer}>
       {showTextInput && <ChatTextInput className={classes.textArea} />}
@@ -131,16 +169,16 @@ const ChatInput = () => {
           }}
           compact
           className={classes.recorderButton}
-          onClick={() => {
+          onClick={async () => {
             if (audioState === "idle") {
-              Recorder.startRecording(router);
+              await startRecording();
             } else if (audioState === "transcribing") {
               return;
             } else {
               if (!activeChatId) {
-                addChat(router);
+                await addChat(router);
               }
-              Recorder.stopRecording(true);
+              stopRecording();
             }
           }}
         >
@@ -164,19 +202,11 @@ const ChatInput = () => {
 
 const RecorderControls = () => {
   const { classes } = styles();
-
   const pushToTalkMode = useChatStore((state) => state.pushToTalkMode);
-
-  const audioState = useChatStore((state) => state.audioState);
-
-  const PushToTalkToggleIcon = pushToTalkMode
-    ? IconMicrophoneOff
-    : IconMicrophone;
-
+  // Use the same audio recorder hook as ChatInput
+  const { audioState, stopRecording } = useAudioRecorder({ onSave: () => {} });
+  const PushToTalkToggleIcon = pushToTalkMode ? IconMicrophoneOff : IconMicrophone;
   const showCancelButton = audioState === "recording";
-
-  const modelChoiceSTT = useChatStore((state) => state.modelChoiceSTT);
-  const Recorder = modelChoiceSTT === "azure" ? AzureRecorder : OpusRecorder;
 
   return (
     <div className={classes.recorderControls}>
@@ -187,7 +217,7 @@ const RecorderControls = () => {
           color="red"
           variant="filled"
           onClick={() => {
-            Recorder.stopRecording(false);
+            stopRecording();
           }}
         >
           <IconX size={px("1.1rem")} stroke={1.5} />
@@ -202,10 +232,6 @@ const RecorderControls = () => {
         variant={pushToTalkMode ? "filled" : "light"}
         onClick={() => {
           setPushToTalkMode(!pushToTalkMode);
-          Recorder.stopRecording(false);
-          if (pushToTalkMode) {
-            Recorder.destroyRecorder();
-          }
         }}
       >
         <PushToTalkToggleIcon size={20} />

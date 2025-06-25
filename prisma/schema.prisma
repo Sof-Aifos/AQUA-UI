@@ -14,11 +14,36 @@ datasource db {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(uuid())
   email      String   @unique
   password   String
   first_name String
   last_name  String
   createdAt  DateTime @default(now())
   verifiedAt DateTime @default(now())
+  chats      Chat[]
+  messages   Message[]
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  deletedAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userId    String
+  chatId    String
+  name      String
+  text      String   @db.Text
+  audio     String
+  createdAt DateTime @default(now())
+  deletedAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  chat      Chat     @relation(fields: [chatId], references: [id])
 }
