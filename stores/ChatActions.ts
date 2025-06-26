@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import cuid from "cuid";
 import { Message } from "./Message";
 import { Chat } from "./Chat";
 import { getChatById, updateChatMessages } from "./utils";
@@ -19,22 +19,48 @@ export const deleteChat = (id: string) =>
     chats: state.chats.filter((chat) => chat.id !== id),
   }));
 
-export const addChat = (router: NextRouter) => {
-  const id = uuidv4();
-
-  set((state) => ({
-    activeChatId: id,
-    chats: [
-      ...state.chats,
-      {
-        id,
-        title: undefined,
-        messages: [],
-        createdAt: new Date(),
+// Pass userId as argument so UI can provide it from session
+export const addChat = async (router: NextRouter, userId: string) => {
+  
+  // Fetch max order from API
+  try {
+    const res = await fetch('/api/add-new-chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    ],
-  }));
-  router.push(`/chat/${id}`);
+      body: JSON.stringify({ userId }), // Pass userId to API
+    });
+    
+    const newChat = await res.json();
+
+    if (newChat.chat && newChat.chat.id) {
+
+      set((state) => ({
+        activeChatId: newChat.chat.id, // Use newChat.id instead of undefined id
+        chats: [
+          ...state.chats,
+          {
+            id: newChat.chat.id,           // Use API data
+            userId: newChat.chat.userId,   // Use API data
+            title: newChat.chat.title,     // Use API data
+            order: newChat.chat.order,     // Add order if you're using it
+            messages: [],             // Start with empty messages
+            createdAt: new Date(newChat.chat.createdAt), // Convert to Date
+            deletedAt: newChat.chat.deletedAt ? new Date(newChat.chat.deletedAt) : null,
+          },
+        ],
+      }));
+      
+      router.push(`/chat/${newChat.chat.id}`);
+
+    } else {
+      console.log('Chat non creata');
+    }
+
+  } catch (e) {
+    console.error('Failed to create new chat', e);
+  }
 };
 
 export const setActiveChatId = (id: string | undefined) =>

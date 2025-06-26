@@ -148,6 +148,9 @@ export default function NavbarSimple() {
     useDisclosure(false);
 
   const chats = useChatStore((state) => state.chats);
+
+  // FIXME :: get chat list from DB
+
   const navOpened = useChatStore((state) => state.navOpened);
 
   const [editedTitle, setEditedTitle] = useState("");
@@ -303,7 +306,7 @@ export default function NavbarSimple() {
             overflowY: "scroll",
           }}
         >
-          {links}
+          {loggedIn && links}
         </Navbar.Section>
       </MediaQuery>
       <Navbar.Section className={classes.footer}>

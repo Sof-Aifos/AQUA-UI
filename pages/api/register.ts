@@ -21,18 +21,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'User already exists' });
     }
     // Hash password
-    const hashed = await bcrypt.hash(password, 10);
+    let hashed;
+    try {
+      hashed = await bcrypt.hash(password, 10);
+    } catch (err) {
+      return res.status(500).json({ error: 'Password hashing failed', details: String(err) });
+    }
     // Create user
-    await prisma.user.create({
-      data: {
-        email,
-        password: hashed,
-        first_name,
-        last_name,
-      },
-    });
+    try {
+      await prisma.user.create({
+        data: {
+          email,
+          password: hashed,
+          first_name,
+          last_name,
+          createdAt: new Date(),
+          verifiedAt: new Date(),
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({ error: 'User creation failed', details: String(err) });
+    }
     return res.status(201).json({ message: 'User registered successfully' });
   } catch (e) {
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Unexpected server error', details: String(e) });
   }
 }

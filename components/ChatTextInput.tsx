@@ -12,11 +12,14 @@ import { IconArrowRight, IconPlayerStop, IconX } from "@tabler/icons-react";
 import { useRouter } from "next/router";
 import { abortCurrentRequest, submitMessage } from "@/stores/SubmitMessage";
 import { addChat, setEditingMessage, update } from "@/stores/ChatActions";
+import { useSession } from "next-auth/react";
 
 export default function ChatInput({ className }: { className?: string }) {
   const theme = useMantineTheme();
   const router = useRouter();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const { data: session } = useSession();
 
   const value = useChatStore((state) => state.textInputValue);
   const setValue = (value: string) => update({ textInputValue: value });
@@ -41,7 +44,8 @@ export default function ChatInput({ className }: { className?: string }) {
       setEditingMessage(undefined);
     }
     if (!activeChatId) {
-      addChat(router);
+      if (!session?.user?.id) throw new Error("No user id in session");
+      addChat(router, session.user.id);
     }
     submitMessage({
       id: editingMessage?.id || uuidv4(),

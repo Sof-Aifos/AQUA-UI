@@ -11,8 +11,9 @@ import {
 } from "@tabler/icons-react";
 import ChatTextInput from "./ChatTextInput";
 import { useRouter } from "next/router";
-import UIControllerSettings from "./UIControllerSettings";
 import { useRef, useState } from "react";
+import cuid from "cuid";
+import { useSession } from "next-auth/react";
 
 // Custom hook for audio recording
 function useAudioRecorder({ onSave }: { onSave: (audioBlob: Blob, messageId: string) => void }) {
@@ -145,21 +146,38 @@ const ChatInput = () => {
   const showTextDuringPTT = useChatStore((state) => state.showTextDuringPTT);
   const showTextInput = !pushToTalkMode || showTextDuringPTT || editingMessage;
 
-  // Save audio to server
+  // Helper to ensure a chat exists before input, returns chat id
+  const { data: session } = useSession();
+  const ensureChat = async () => {
+    if (!activeChatId) {
+      if (!session?.user?.id) throw new Error("No user id in session");
+      const newChatId = await addChat(router, session.user.id);
+      return newChatId;
+    }
+    return activeChatId;
+  };
+
+  // Save audio to server, ensure chat exists
   const handleSaveAudio = async (audioBlob: Blob, messageId: string) => {
+    const chatId = await ensureChat();
     const formData = new FormData();
-    formData.append("audio", audioBlob, `${messageId}.mp3`);
-    await fetch("/api/upload-audio", {
-      method: "POST",
-      body: formData,
-    });
+    // formData.append("audio", audioBlob, `${messageId}.mp3`);
+    // formData.append("chatId", chatId);
+    // await fetch("/api/upload-audio", {
+    //   method: "POST",
+    //   body: formData,
+    // });
   };
 
   const { audioState, startRecording, stopRecording } = useAudioRecorder({ onSave: handleSaveAudio });
 
   return (
     <div className={classes.textAreaContainer}>
-      {showTextInput && <ChatTextInput className={classes.textArea} />}
+      {showTextInput && (
+        <ChatTextInput
+          className={classes.textArea}
+        />
+      )}
       {pushToTalkMode && (
         <Button
           sx={{
@@ -171,13 +189,12 @@ const ChatInput = () => {
           className={classes.recorderButton}
           onClick={async () => {
             if (audioState === "idle") {
+              await ensureChat();
               await startRecording();
             } else if (audioState === "transcribing") {
               return;
             } else {
-              if (!activeChatId) {
-                await addChat(router);
-              }
+              await ensureChat();
               stopRecording();
             }
           }}
@@ -222,9 +239,7 @@ const RecorderControls = () => {
         >
           <IconX size={px("1.1rem")} stroke={1.5} />
         </Button>
-      ) : (
-        <UIControllerSettings />
-      )}
+      ) : null}
 
       <Button
         sx={{ height: 36, borderRadius: "0px 0px 8px 0px" }}
@@ -242,6 +257,9 @@ const RecorderControls = () => {
 
 export default function UIController() {
   const { classes } = styles();
+  const { data: session, status } = useSession();
+
+  if (!session) return null;
 
   return (
     <div className={classes.container}>

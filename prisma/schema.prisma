@@ -14,36 +14,37 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  email      String   @unique
+  id         String    @id @default(cuid())
+  email      String    @unique
   password   String
   first_name String
   last_name  String
-  createdAt  DateTime @default(now())
-  verifiedAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  verifiedAt DateTime? @default(now())
   chats      Chat[]
   messages   Message[]
 }
 
 model Chat {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   userId    String
-  name      String
+  title     String
+  order     BigInt?
   createdAt DateTime @default(now())
-  deletedAt DateTime
+  deletedAt DateTime?
   user      User     @relation(fields: [userId], references: [id])
   messages  Message[]
 }
 
 model Message {
-  id        String   @id @default(uuid())
+  id        String    @id @default(cuid())
   userId    String
   chatId    String
-  name      String
-  text      String   @db.Text
-  audio     String
-  createdAt DateTime @default(now())
-  deletedAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
-  chat      Chat     @relation(fields: [chatId], references: [id])
+  order     BigInt?
+  message   String?   @db.Text
+  audio     String?
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  chat      Chat      @relation(fields: [chatId], references: [id])
 }

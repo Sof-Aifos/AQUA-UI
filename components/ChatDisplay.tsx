@@ -1,3 +1,4 @@
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import {
   ActionIcon,
@@ -108,7 +109,17 @@ const useStyles = createStyles((theme: MantineTheme) => ({
 }));
 
 const ChatDisplay = () => {
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading" || status === "unauthenticated") return null;
+
   const activeChatId = router.query.chatId as string | undefined;
 
   useEffect(() => {
