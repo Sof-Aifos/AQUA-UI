@@ -5,6 +5,10 @@ import { getChatById, updateChatMessages } from "./utils";
 import { notifications } from "@mantine/notifications";
 import { getModelInfo } from "./Model";
 import { useChatStore } from "./ChatStore";
+import { ensureChat } from "./ChatActions";
+import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
+import cuid from "cuid";
 
 const get = useChatStore.getState;
 const set = useChatStore.setState;
@@ -25,39 +29,69 @@ export const submitMessage = async (message: Message) => {
     return;
   }
 
-  const activeChatId = get().activeChatId;
-  const chat = get().chats.find((c) => c.id === activeChatId!);
-  if (chat === undefined) {
-    console.error("Chat not found");
-    return;
+  console.log('----> ' + get().activeChatId);
+  return;
+
+  // Ensure chat exists if not present
+  let activeChatId = get().activeChatId;
+  let chat = get().chats.find((c) => c.id === activeChatId!);
+  if (!chat) {
+    // Try to ensure chat (create if needed)
+    // We need router and session, so we use window globals for router and session
+    // This is a workaround for non-component context
+    const router = (window as any).nextRouter || undefined;
+    const session = (window as any).nextSession || undefined;
+    if (!router || !session) {
+      console.error("No router or session context for ensureChat");
+      return;
+    }
+    activeChatId = await ensureChat(router, session);
+    chat = get().chats.find((c) => c.id === activeChatId!);
+    if (!chat) {
+      console.error("Chat not found after ensureChat");
+      return;
+    }
   }
-  console.log("chat", chat.id);
+  console.log("--> new chat id: ", chat.id);
 
   // If this is an existing message, remove all the messages after it
-  const index = chat.messages.findIndex((m) => m.id === message.id);
-  if (index !== -1) {
-    set((state) => ({
-      chats: state.chats.map((c) => {
-        if (c.id === chat.id) {
-          c.messages = c.messages.slice(0, index);
-        }
-        return c;
-      }),
-    }));
-  }
+  // const index = chat.messages.findIndex((m) => m.id === message.id);
+  // if (index !== -1) {
+  //   set((state) => ({
+  //     chats: state.chats.map((c) => {
+  //       if (c.id === chat.id) {
+  //         c.messages = c.messages.slice(0, index);
+  //       }
+  //       return c;
+  //     }),
+  //   }));
+  // }
 
   // Add the message
-  set((state) => ({
-    apiState: "loading",
-    chats: state.chats.map((c) => {
-      if (c.id === chat.id) {
-        c.messages.push(message);
-      }
-      return c;
-    }),
-  }));
+  // Instead of creating chat in state, call the API to create chat in DB
+  try {
+    const res = await fetch('/api/add-new-chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId: chat.userId }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to create chat in DB');
+    }
+    const data = await res.json();
+    // Optionally update state with new chat from DB if needed
+    // set((state) => ({
+    //   chats: [...state.chats, data.chat],
+    //   activeChatId: data.chat.id,
+    // }));
+  } catch (e) {
+    console.error('Error creating chat in DB:', e);
+    return;
+  }
 
-  const assistantMsgId = uuidv4();
+  const assistantMsgId = cuid();
   // Add the assistant's response
   set((state) => ({
     chats: state.chats.map((c) => {

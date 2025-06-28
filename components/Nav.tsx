@@ -346,15 +346,15 @@ export default function NavbarSimple() {
           </span>
         </a>
 
-        <Modal
+        {/* <Modal
           opened={openedSettingsModal}
           onClose={closeSettingsModal}
           title="Settings"
         >
           <SettingsModal close={closeSettingsModal} />
-        </Modal>
+        </Modal> */}
 
-        <a
+        {/* <a
           href="#"
           className={classes.link}
           onClick={(event) => {
@@ -369,7 +369,7 @@ export default function NavbarSimple() {
         >
           <IconSettings className={classes.linkIcon} stroke={1.5} />
           <span>Settings</span>
-        </a>
+        </a> */}
       </Navbar.Section>
       <Modal
         opened={openedTitleModal}

@@ -126,7 +126,7 @@ export default function MuHeader({ children }: any) {
                 </MediaQuery>
               </>
             ) : null}
-            <Text size="sm">AQUEA</Text>
+            <Text size="sm">AQUA</Text>
           </Group>
         </MediaQuery>
 

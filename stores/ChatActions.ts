@@ -185,3 +185,14 @@ export const refreshModels = async () => {
     console.error("Failed to fetch models:", error);
   }
 };
+
+// Helper to ensure a chat exists before input, returns chat id
+export const ensureChat = async (router: any, session: any) => {
+  const activeChatId = get().activeChatId;
+  if (!activeChatId) {
+    if (!session?.user?.id) throw new Error("No user id in session");
+    const newChatId = await addChat(router, session.user.id);
+    return newChatId;
+  }
+  return activeChatId;
+};

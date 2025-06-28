@@ -37,14 +37,15 @@ model Chat {
 }
 
 model Message {
-  id        String    @id @default(cuid())
-  userId    String
-  chatId    String
-  order     BigInt?
-  message   String?   @db.Text
-  audio     String?
-  createdAt DateTime  @default(now())
-  deletedAt DateTime?
-  user      User      @relation(fields: [userId], references: [id])
-  chat      Chat      @relation(fields: [chatId], references: [id])
+  id                String    @id @default(cuid())
+  userId            String
+  chatId            String
+  order             BigInt?
+  message           String?   @db.Text
+  audio             String?
+  is_model_answared Boolean?  @default(false)
+  createdAt         DateTime  @default(now())
+  deletedAt         DateTime?
+  user              User      @relation(fields: [userId], references: [id])
+  chat              Chat      @relation(fields: [chatId], references: [id])
 }
